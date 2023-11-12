@@ -13,39 +13,47 @@ import '../../services/api_services/api_services.dart';
 import '../../services/repository/crypto_repository.dart';
 
 class CryptoListView extends StatelessWidget {
-  final CryptoViewModel viewModel =
-      CryptoViewModel(CryptoRepository(ApiServices()));
+  // Instance of the ViewModel responsible for managing the state of the view
+  final CryptoViewModel viewModel = CryptoViewModel(CryptoRepository(ApiServices()));
 
+  // Constructor for the CryptoListView
   CryptoListView({Key? key}) : super(key: key);
 
+  // Build method to create the UI for the CryptoListView
   @override
   Widget build(BuildContext context) {
+    // Fetch cryptocurrency data when the view is built
     viewModel.fetchCryptoData();
 
-
+    // Scaffold widget representing the overall structure of the screen
     return Scaffold(
+      // AppBar at the top of the screen
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         title: Column(
           children: [
+            // Header row with title and search/filter options
             buildHeaderRow(),
             const SizedBox(
               height: AppSize.s14,
             ),
-            buildSearchAndFilterRow(context:context,onTap: () {
+            // Search and filter row with sort dialog trigger
+            buildSearchAndFilterRow(context:context, onTap: () {
               _showSortDialog(context);
             }),
           ],
         ),
         toolbarHeight: 150.0,
       ),
+      // Bottom navigation bar with navigation items
       bottomNavigationBar: buildBottomNavigationBar(context),
+      // Body of the screen containing the main content
       body: buildCryptoListViewBody(context),
     );
   }
 
-  //Bottom navigation
+  // Build the bottom navigation bar
   Widget buildBottomNavigationBar(context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -68,7 +76,7 @@ class CryptoListView extends StatelessWidget {
     );
   }
 
-  //crypto list UI
+  // Build the main content of the CryptoListView
   Widget buildCryptoListViewBody(context) {
     return Padding(
       padding: const EdgeInsets.only(
@@ -76,9 +84,13 @@ class CryptoListView extends StatelessWidget {
       child: SingleChildScrollView(
         child: Column(
           children: [
+            // Row displaying the title of the top cryptocurrencies
             buildTopCryptoTitleRow(),
+            // Banner image section
             buildBannerImage(),
+            // Row with a "View All" option
             getViewAllRow(),
+            // StreamBuilder to handle the dynamic list of cryptocurrencies
             getCryptoList(),
           ],
         ),
@@ -86,25 +98,31 @@ class CryptoListView extends StatelessWidget {
     );
   }
 
+  // StreamBuilder for displaying the list of cryptocurrencies
   StreamBuilder<List<Crypto>> getCryptoList() {
     return StreamBuilder<List<Crypto>>(
       stream: viewModel.cryptoStream,
       builder: (context, snapshot) {
+        // Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
+        }
+        // Error state
+        else if (snapshot.hasError) {
           return const Center(child: Text(AppStrings.errorFetching));
-        } else if (snapshot.hasData) {
+        }
+        // Data available state
+        else if (snapshot.hasData) {
           List<Crypto> cryptoList = snapshot.data!;
+          // ListView to display each cryptocurrency item
           return ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: cryptoList.length,
             itemBuilder: (context, index) {
               Crypto crypto = cryptoList[index];
-              // viewModel.fetchCryptoLogo(crypto.id);
-              String changeSymbol =
-                  crypto.quote.usd.percentChange24h >= 0 ? '+' : '';
+              String changeSymbol = crypto.quote.usd.percentChange24h >= 0 ? '+' : '';
+              // Container representing each cryptocurrency item
               return SizedBox(
                 width: double.infinity,
                 child: Container(
@@ -112,11 +130,13 @@ class CryptoListView extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const CircleAvatar(),
+                      // CircleAvatar with cryptocurrency logo
+                      CircleAvatar(child: Image.network("https://s2.coinmarketcap.com/static/img/coins/64x64/825.png"),),
                       const SizedBox(width: 16.0),
                       Expanded(
                         child: Row(
                           children: [
+                            // Column with cryptocurrency symbol and name
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -131,6 +151,7 @@ class CryptoListView extends StatelessWidget {
                             const SizedBox(
                               width: 30,
                             ),
+                            // Image representing percentage change
                             Image.asset(
                               crypto.quote.usd.percentChange24h >= 0
                                   ? ImageAsset.greenGraph
@@ -138,6 +159,7 @@ class CryptoListView extends StatelessWidget {
                               width: 40,
                             ),
                             const Spacer(),
+                            // Column with cryptocurrency price and percentage change
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,9 +169,9 @@ class CryptoListView extends StatelessWidget {
                                   '$changeSymbol${crypto.quote.usd.percentChange24h.toStringAsFixed(2)}%',
                                   style: TextStyle(
                                     color:
-                                        crypto.quote.usd.percentChange24h >= 0
-                                            ? Colors.green
-                                            : Colors.red,
+                                    crypto.quote.usd.percentChange24h >= 0
+                                        ? Colors.green
+                                        : Colors.red,
                                   ),
                                 ),
                               ],
@@ -163,36 +185,48 @@ class CryptoListView extends StatelessWidget {
               );
             },
           );
-        } else {
+        }
+        // No data available state
+        else {
           return const Center(child: Text(AppStrings.noData));
         }
       },
     );
   }
 
+  // Show a dialog for sorting options
   void _showSortDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(AppStrings.sortBy),
+          title: const Text(
+            AppStrings.sortBy,
+          ),
+          contentPadding: EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0, bottom: 0.0),
           content: Column(
             children: [
+              // ListTile for sorting by market cap
               getListAlertListTile(
                 context: context,
-                title:AppStrings.marketCap,
+                title: AppStrings.marketCap,
                 onTap: () {
                   viewModel.sortByMarketCap();
                   Navigator.of(context).pop();
                 },
               ),
+              SizedBox(height: 10), // Adjust the height as needed
+              // ListTile for sorting by price
               getListAlertListTile(
-                title:AppStrings.price,
+                title: AppStrings.price,
                 onTap: () {
                   viewModel.sortByPrice();
                   Navigator.of(context).pop();
-                }, context: context,
+                },
+                context: context,
               ),
+              SizedBox(height: 10), // Adjust the height as needed
+              // ListTile for sorting by 24h volume
               getListAlertListTile(
                 context: context,
                 title: AppStrings.volume24,
@@ -203,13 +237,16 @@ class CryptoListView extends StatelessWidget {
               ),
             ],
           ),
+          backgroundColor: Colors.white, // Set your desired background color
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0), // Set your desired border radius
+          ),
         );
       },
     );
   }
 
-
-
+  // Build a navigation item with an icon
   Widget buildNavItem(BuildContext context, int index, String icon,
       {double iconSize = 30.0}) {
     return InkWell(
